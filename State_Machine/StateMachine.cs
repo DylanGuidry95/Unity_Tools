@@ -1,21 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography.Pkcs;
 using System.Text;
-using System.Text.Json.Serialization;
-using System.Windows.Forms;
 using Newtonsoft.Json;
-
+using UnityEngine; 
 namespace Visual_Test
 {
-    [JsonObject(MemberSerialization.OptIn)]
-    class StateMachine
+    [JsonObject(MemberSerialization.OptIn), Serializable]
+    public class StateMachine
     {        
         [JsonProperty]
         private Dictionary<string, State> States;
         [JsonProperty]
         private Dictionary<string, Transition> Transitions;
-        [JsonProperty]
+        [JsonProperty, SerializeField]
         private List<StateMachineParameter> MachineParameters;
 
         [JsonProperty]
@@ -35,7 +32,9 @@ namespace Visual_Test
 
         public StateMachine()
         {
-
+            MachineParameters = new List<StateMachineParameter>();
+            States = new Dictionary<string, State>();
+            Transitions = new Dictionary<string, Transition>();
         }
 
         public StateMachine(object[] states) : this()
@@ -158,7 +157,20 @@ namespace Visual_Test
             }
             return -4;
         }
-            
+
+        public int RemoveState(object state)
+        {
+            if (States == null)
+                return -1;
+
+            if (state.GetType() == typeof(string))
+                States.Remove((string)state);
+            else if (state.GetType() == typeof(State))
+                States.Remove(((State)state).Name);
+            return 0;
+        }
+
+
         public int DefineTransition(State from, State to)
         {
             if (States == null || from == null || to == null)
@@ -206,8 +218,21 @@ namespace Visual_Test
                 MachineParameters.Add(new StringParameter(name, (string)value));
                 return 0;
             }
+            if (value.GetType() == typeof(bool))
+            {
+                MachineParameters.Add(new BooleanParamater(name, (bool)value));
+                return 0;
+            }
             return -2;
         }        
+
+        public void RemoveParamter(string name)
+        {
+            if (Parameters.ContainsKey(name))
+            {
+                MachineParameters.Remove(Parameters[name]);
+            }
+        }
 
         public Transition GetTransition(string from, string to)
         {
@@ -215,6 +240,28 @@ namespace Visual_Test
                 return Transitions[from + ">" + to];
             else
                 return null;
+        }
+
+        public List<Transition>GetAllTransitionsFrom(string origin)
+        {
+            var trans = new List<Transition>();
+            foreach(var t in Transitions)
+            {
+                if (t.Value.From == origin)
+                    trans.Add(t.Value);
+            }
+            return trans;
+        }
+
+        public List<Transition>GetAllTransitionsTo(string destination)
+        {
+            var trans = new List<Transition>();
+            foreach(var t in Transitions)
+            {
+                if (t.Value.To == destination)
+                    trans.Add(t.Value);
+            }
+            return trans;
         }
 
         public static StateMachine LoadMachine(string path)

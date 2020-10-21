@@ -37,6 +37,8 @@ namespace Visual_Test
 
         public void AddEnterStateMethod(Type house, string methodName)
         {
+            if (house == null || house.GetMethod(methodName) == null)
+                return;
             if(StateEntered == null)
                 StateEntered = (OnStateEnter)Delegate.CreateDelegate(typeof(OnStateEnter), null, house.GetMethod(methodName));
             else
@@ -48,6 +50,8 @@ namespace Visual_Test
 
         public void AddUpdateStateMethod(Type house, string methodName)
         {
+            if (house == null || house.GetMethod(methodName) == null)
+                return;
             if (StateUpdate == null)
                 StateUpdate = (OnStateUpdate)Delegate.CreateDelegate(typeof(OnStateUpdate), null, house.GetMethod(methodName));
             else
@@ -59,13 +63,15 @@ namespace Visual_Test
 
         public void AddExitStateMethod(Type house, string methodName)
         {
-            if(StateExited == null)
+            if (house == null || house.GetMethod(methodName) == null)
+                return;
+            if (StateExited == null)
                 StateExited = (OnStateExit)Delegate.CreateDelegate(typeof(OnStateExit), null, house.GetMethod(methodName));
             else
                 StateExited += (OnStateExit)Delegate.CreateDelegate(typeof(OnStateExit), null, house.GetMethod(methodName));
             if (!SerializeData.ContainsKey("StateExited_" + house.ToString() + "_" + methodName))
                 SerializeData.Add("StateExited_" + house.ToString() + "_" + methodName, new DelegateData() { DelegateName = "StateExited", MethodHouse = house, MethodName = methodName });
-        }
+        }      
 
         public void BindDelegates()
         {            
@@ -89,7 +95,7 @@ namespace Visual_Test
         public void EnterState(object[] args)
         {
             if(StateEntered != null)
-                StateEntered.Invoke(args);
+                StateEntered.Invoke(args);            
         }
         public void UpdateState(object[] args)
         {

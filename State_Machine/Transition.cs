@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 namespace Visual_Test
 {
     [JsonObject(MemberSerialization.OptIn)]
-    class Transition
+    public class Transition
     {
         [JsonProperty]
         private State Current;

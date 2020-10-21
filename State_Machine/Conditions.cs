@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Newtonsoft.Json;
@@ -112,6 +113,7 @@ namespace Visual_Test
         }
     }
 
+    [Serializable]
     public class StateMachineParameter
     {
         public string Name;        
@@ -122,7 +124,7 @@ namespace Visual_Test
         {
             Name = name;
             Stored_Value = value;
-        }
+        }        
 
         public void SetValue(object value) 
         {
@@ -176,9 +178,10 @@ namespace Visual_Test
         }
     }
 
+    [Serializable]
     public class StringParameter : StateMachineParameter
     {        
-        public new string stored_Value { get { return (string)Stored_Value; } }
+        public string stored_Value { get { return (string)Stored_Value; } }
 
         public StringParameter(string name, string value) : base(name, value) { }
 
@@ -199,7 +202,7 @@ namespace Visual_Test
         public static bool operator !=(StringParameter lhs, object rhs)
         {
             if (rhs.GetType() == typeof(string))
-                return lhs.Stored_Value != (string)rhs;
+                return lhs.stored_Value != (string)rhs;
             else if (rhs.GetType() == typeof(StringParameter))
                 return lhs.Stored_Value != ((StringParameter)(rhs)).Stored_Value;
             return false;
@@ -207,9 +210,41 @@ namespace Visual_Test
 
     }
 
+    [Serializable]
+    public class BooleanParamater : StateMachineParameter
+    {
+        public bool stored_Value { get { return (bool)Stored_Value; } }
+
+        public BooleanParamater(string name, bool value) : base(name, value) { }
+
+        public new void SetValue(object value)
+        {
+            Stored_Value = (bool)value;
+        }
+
+        public static bool operator ==(BooleanParamater lhs, object rhs)
+        {
+            if (rhs.GetType() == typeof(bool))
+                return lhs.stored_Value == (bool)rhs;
+            else if (rhs.GetType() == typeof(BooleanParamater))
+                return lhs.stored_Value == ((BooleanParamater)(rhs)).stored_Value;
+            return false;
+        }
+
+        public static bool operator !=(BooleanParamater lhs, object rhs)
+        {
+            if (rhs.GetType() == typeof(bool))
+                return lhs.stored_Value != (bool)rhs;
+            else if (rhs.GetType() == typeof(BooleanParamater))
+                return lhs.Stored_Value != ((BooleanParamater)(rhs)).Stored_Value;
+            return false;
+        }
+    }
+
+    [Serializable]
     public class IntParameter : StateMachineParameter
     {
-        public float stored_Value { get { return (int)Stored_Value; } }
+        public int stored_Value { get { return (int)Stored_Value; } }
 
         public IntParameter(string name, int value) : base(name, value) { }
 
@@ -273,6 +308,7 @@ namespace Visual_Test
         }
     }
 
+    [Serializable]
     public class FloatParameter : StateMachineParameter
     {
         public float stored_Value { get { return (float)Stored_Value; } }
@@ -337,5 +373,9 @@ namespace Visual_Test
                 return lhs.stored_Value <= ((FloatParameter)(rhs)).stored_Value;
             return false;
         }
+
+        public static implicit operator float(FloatParameter param) => param.stored_Value;
+        
+
     }
 }
