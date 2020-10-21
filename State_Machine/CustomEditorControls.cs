@@ -37,10 +37,8 @@ public class Control
     {
         var mousePosition = Event.current.mousePosition;
         if(DrawRect.Contains(mousePosition))
-        {
-            GUI.color = Color.red;
-            GUI.Box(DrawRect, "");
-            if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+        {            
+            if (Event.current.type == EventType.Used || Event.current.type == EventType.MouseDown)
             {                
                 if(OnInteract != null)
                     OnInteract.Invoke(this);
