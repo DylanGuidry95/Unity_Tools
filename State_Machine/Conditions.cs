@@ -116,8 +116,15 @@ namespace Visual_Test
     [Serializable]
     public class StateMachineParameter
     {
-        public string Name;        
-        protected object Stored_Value;
+        public string Name;
+                        
+        public object Stored_Value;
+        
+        public enum ParmaterType
+        {
+            _int, _float, _string, _bool
+        }
+
         public object Value { get { return Stored_Value; } }
 
         public StateMachineParameter(string name, object value)
@@ -181,13 +188,14 @@ namespace Visual_Test
     [Serializable]
     public class StringParameter : StateMachineParameter
     {        
-        public string stored_Value { get { return (string)Stored_Value; } }
+        public string InternalValue;
+        public string stored_Value { get { InternalValue = (string)Stored_Value; return InternalValue; } }
 
         public StringParameter(string name, string value) : base(name, value) { }
 
         public new void SetValue(object value)
-        {
-            Stored_Value = (string)value;
+        {            
+            Stored_Value = InternalValue = (string)value;
         }
 
         public static bool operator ==(StringParameter lhs, object rhs)
@@ -212,14 +220,15 @@ namespace Visual_Test
 
     [Serializable]
     public class BooleanParamater : StateMachineParameter
-    {
-        public bool stored_Value { get { return (bool)Stored_Value; } }
+    {        
+        public bool InternalValue;
+        public bool stored_Value { get { InternalValue = (bool)Stored_Value; return (bool)Stored_Value; } }
 
         public BooleanParamater(string name, bool value) : base(name, value) { }
 
         public new void SetValue(object value)
         {
-            Stored_Value = (bool)value;
+            Stored_Value = InternalValue = (bool)value;
         }
 
         public static bool operator ==(BooleanParamater lhs, object rhs)
@@ -243,14 +252,15 @@ namespace Visual_Test
 
     [Serializable]
     public class IntParameter : StateMachineParameter
-    {
-        public int stored_Value { get { return (int)Stored_Value; } }
+    {        
+        public int InternalValue;
+        public int stored_Value { get { InternalValue = (int)Stored_Value; return (int)Stored_Value; } }
 
         public IntParameter(string name, int value) : base(name, value) { }
 
         public new void SetValue(object value)
         {
-            Stored_Value = (int)value;
+            Stored_Value = InternalValue = (int)value;
         }
 
         public static bool operator ==(IntParameter lhs, object rhs)
@@ -310,14 +320,15 @@ namespace Visual_Test
 
     [Serializable]
     public class FloatParameter : StateMachineParameter
-    {
-        public float stored_Value { get { return (float)Stored_Value; } }
+    {        
+        public float InternalValue;
+        public float stored_Value { get { InternalValue = (float)Stored_Value; return (float)Stored_Value; } }
 
         public FloatParameter(string name, float value) : base(name, value) { }
 
         public new void SetValue(object value)
         {
-            Stored_Value = (float)value;
+            Stored_Value = InternalValue = (float)value;
         }
 
         public static bool operator ==(FloatParameter lhs, object rhs)
@@ -375,7 +386,5 @@ namespace Visual_Test
         }
 
         public static implicit operator float(FloatParameter param) => param.stored_Value;
-        
-
     }
 }

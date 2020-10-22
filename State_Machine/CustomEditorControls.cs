@@ -5,6 +5,8 @@ using UnityEditor;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEditor.ShaderGraph.Internal;
 using System.Xml.Serialization;
+using System;
+using System.Threading;
 
 public class Control
 {
@@ -143,6 +145,68 @@ public class AutoResizeContainer : GUIContianiner
     }
 }
 
+public class ScrollContainer : GUIContianiner
+{
+    public bool IsAtCapacity;
+    private Vector2 ScrollViewPosition;
+    private Vector2 initialSize;
+    private Rect ScrollRect;
+
+    public ScrollContainer()
+    {
+        ScrollViewPosition = Vector2.zero;
+        initialSize = Position.size;
+    }
+
+    public override void Draw(Rect homeRect)
+    {
+        if (!IsVisible)
+            return;
+        GUI.color = DrawColor;
+
+        DrawRect = Position;
+        if (homeRect != Rect.zero)
+        {
+            var DrawPosition = new Rect(homeRect.position + Position.position,
+                Position.size);
+            DrawRect = DrawPosition;
+            GUI.Box(DrawPosition, "");
+        }
+        else
+            GUI.Box(Position, "");
+        if (Controls.Count > 0)
+        {
+            IsAtCapacity = Controls[Controls.Count - 1].DrawRect.max.y > initialSize.y;            
+        }
+        if (IsAtCapacity)
+        {
+            float total_height = 0;
+            foreach (var c in Controls)
+            {
+                total_height += c.Position.height;
+            }            
+            ScrollRect = new Rect(DrawRect.position.x, DrawRect.position.y, 0, total_height + (ControlPadding.y * (Controls.Count + 1)));
+            ScrollViewPosition = GUI.BeginScrollView(DrawRect, ScrollViewPosition, ScrollRect);            
+        }        
+
+        Vector2 lastDrawControl = DrawRect.min;
+        foreach (var c in Controls)
+        {
+            if (c == Controls[0])
+                c.Draw(new Rect(DrawRect.position + ControlPadding, Position.size));
+            else
+                c.Draw(new Rect(lastDrawControl, c.Position.size));
+            lastDrawControl = c.DrawRect.max + ControlPadding;
+            lastDrawControl.x = DrawRect.min.x + ControlPadding.x;
+        }
+
+        if (IsAtCapacity)
+        {
+            GUI.EndScrollView();
+        }
+    }
+}
+
 public class EditorButton : Control
 {
     public delegate void ButtonClicked();
@@ -250,6 +314,29 @@ public class EditorEnumField : Control
         if (localStorage != Value && OnInteract != null)
             OnInteract.Invoke(this);
         Value = localStorage;
+        OnMouseClick();
+    }
+}
+
+public class EditorObjectField : Control
+{
+    public bool IsReadOnly;
+    public UnityEngine.Object Value;
+    public System.Type AcceptableType;
+
+    public override void Draw(Rect homeRect)
+    {
+        base.Draw(homeRect);
+        GUI.color = Color.white;
+        DrawRect = new Rect(homeRect.position + Position.position, Position.size);
+        UnityEngine.Object localStorage = EditorGUI.ObjectField(new Rect(DrawRect.position, Position.size), Name, Value, typeof(UnityEngine.Object), false);
+        if (AcceptableType == null)
+            AcceptableType = typeof(UnityEngine.Object);
+        if(localStorage != null)
+            if (localStorage.GetType() == AcceptableType)
+                Value = localStorage;
+        if (localStorage != Value && OnInteract != null)
+            OnInteract.Invoke(this);
         OnMouseClick();
     }
 }

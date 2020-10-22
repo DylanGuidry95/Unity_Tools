@@ -5,15 +5,22 @@ using Newtonsoft.Json;
 using UnityEngine; 
 namespace Visual_Test
 {
-    [JsonObject(MemberSerialization.OptIn), Serializable]
-    public class StateMachine
+    [JsonObject(MemberSerialization.OptIn), Serializable, CreateAssetMenu(fileName = "NewStateMachine", menuName = "StateMachine")]
+    public class StateMachine : ScriptableObject
     {        
         [JsonProperty]
         private Dictionary<string, State> States;
         [JsonProperty]
-        private Dictionary<string, Transition> Transitions;
-        [JsonProperty, SerializeField]
-        private List<StateMachineParameter> MachineParameters;
+        private Dictionary<string, Transition> Transitions;                
+
+        [SerializeField]
+        private List<IntParameter> IntParameters;
+        [SerializeField]
+        private List<StringParameter> StringParameters;
+        [SerializeField]
+        private List<FloatParameter> FloatParameters;
+        [SerializeField]
+        private List<BooleanParamater> BooleanParameters;
 
         [JsonProperty]
         public Dictionary<string, StateMachineParameter> Parameters 
@@ -21,64 +28,38 @@ namespace Visual_Test
             get
             {
                 var temp = new Dictionary<string, StateMachineParameter>();
-                if(MachineParameters != null)
-                    foreach(var p in MachineParameters)
+                if(IntParameters != null)
+                    foreach(var i in IntParameters)
                     {
-                        temp.Add(p.Name, p);
+                        temp.Add(i.Name, i);
+                    }
+                if (StringParameters != null)
+                    foreach (var i in StringParameters)
+                    {
+                        temp.Add(i.Name, i);
+                    }
+                if (FloatParameters != null)
+                    foreach (var i in FloatParameters)
+                    {
+                        temp.Add(i.Name, i);
+                    }
+                if (BooleanParameters != null)
+                    foreach (var i in BooleanParameters)
+                    {
+                        temp.Add(i.Name, i);
                     }
                 return temp;
             }
         }
 
-        public StateMachine()
+        public void CreateInstance()
         {
-            MachineParameters = new List<StateMachineParameter>();
+            IntParameters = new List<IntParameter>();
+            FloatParameters = new List<FloatParameter>();
+            StringParameters = new List<StringParameter>();
+            BooleanParameters = new List<BooleanParamater>();
             States = new Dictionary<string, State>();
             Transitions = new Dictionary<string, Transition>();
-        }
-
-        public StateMachine(object[] states) : this()
-        {                        
-            foreach(var s in states)
-            {
-                if(s.GetType() == typeof(string))
-                {
-                    AddState((string)s);
-                }
-                if(s.GetType() == typeof(State))
-                {
-                    AddState(((State)s));
-                }
-            }
-        }
-
-        public StateMachine(object[] states, object[] transitions) : this(states)
-        {
-            foreach(var t in transitions)
-            {
-                if(t.GetType() == typeof(object[]))
-                {
-                    var obj_arr = (object[])t;
-                    State from = null, to = null;
-                    if (obj_arr[0].GetType() == typeof(string))
-                        from = GetState((string)obj_arr[0]);
-                    else if (obj_arr[0].GetType() == typeof(State))
-                        from = (State)obj_arr[0];
-                    if(obj_arr[1].GetType() == typeof(string))
-                        to = GetState((string)obj_arr[1]);
-                    else if (obj_arr[1].GetType() == typeof(State))
-                        to = (State)obj_arr[1];
-
-                    DefineTransition(from, to);
-                }
-                else if(t.GetType() == typeof(Transition))
-                {
-                    if (!Transitions.ContainsKey(((Transition)t).Name))
-                    {
-                        Transitions.Add(((Transition)t).Name, (Transition)t);
-                    }
-                }
-            }
         }
         
         public List<State> ExposeStates
@@ -195,32 +176,30 @@ namespace Visual_Test
         }
 
         public int AddParameter(string name, object value)
-        {
-            if (MachineParameters == null)
-                MachineParameters = new List<StateMachineParameter>();
-            foreach(var p in MachineParameters)
+        {            
+            foreach(var p in Parameters)
             {
-                if (p.Name == name)
+                if (p.Key == name)
                     return -1;
             }
             if(value.GetType() == typeof(int))
             {
-                MachineParameters.Add(new IntParameter(name, (int)value));
+                IntParameters.Add(new IntParameter(name, (int)value));
                 return 0;
             }
             if (value.GetType() == typeof(float))
             {
-                MachineParameters.Add(new FloatParameter(name, (float)value));
+                FloatParameters.Add(new FloatParameter(name, (float)value));
                 return 0;
             }
             if (value.GetType() == typeof(string))
             {
-                MachineParameters.Add(new StringParameter(name, (string)value));
+                StringParameters.Add(new StringParameter(name, (string)value));
                 return 0;
             }
             if (value.GetType() == typeof(bool))
             {
-                MachineParameters.Add(new BooleanParamater(name, (bool)value));
+                BooleanParameters.Add(new BooleanParamater(name, (bool)value));
                 return 0;
             }
             return -2;
@@ -230,7 +209,15 @@ namespace Visual_Test
         {
             if (Parameters.ContainsKey(name))
             {
-                MachineParameters.Remove(Parameters[name]);
+                var removeItem = Parameters[name];
+                if (removeItem.GetType() == typeof(IntParameter))
+                    IntParameters.Remove((IntParameter)removeItem);
+                if (removeItem.GetType() == typeof(StringParameter))
+                    StringParameters.Remove((StringParameter)removeItem);
+                if (removeItem.GetType() == typeof(FloatParameter))
+                    FloatParameters.Remove((FloatParameter)removeItem);
+                if (removeItem.GetType() == typeof(BooleanParamater))
+                    BooleanParameters.Remove((BooleanParamater)removeItem);
             }
         }
 

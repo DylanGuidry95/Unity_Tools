@@ -12,8 +12,9 @@ using System;
 public class StateMachineEditor : EditorWindow
 {
     private static GUIContianiner ControlsContianer;
-    private static GUIContianiner paramContainer;
-    private static GUIContianiner addParamContainer;
+    private static ScrollContainer ParamContainer;
+    private static GUIContianiner AddParamContainer;
+    private static GUIContianiner ActiveMachineContainer;
 
     private static StateMachine StateRef;
     
@@ -22,10 +23,10 @@ public class StateMachineEditor : EditorWindow
         _int, _string, _float, _bool
     }
 
-    private ParamType TypeToAdd;
-    public string ParamName;
+    private static ParamType TypeToAdd;
+    public static string ParamName;
 
-    private Control LastParamInteracted;
+    private static Control LastParamInteracted;    
 
     [UnityEditor.MenuItem("Tools/State Machine Editor")]
     private static void Init()
@@ -36,17 +37,35 @@ public class StateMachineEditor : EditorWindow
         ControlsContianer = new GUIContianiner()
         {
             Name = "Container",
-            Position = new Rect(0, 0, 325, 500),
+            Position = new Rect(0, 0, 325, 100),
             ControlPadding = new Vector2(5, 5)
         };
-        paramContainer = new GUIContianiner()
+
+        ActiveMachineContainer = new AutoResizeContainer()
+        {
+            Name = "Active Machine",
+            Position = new Rect(0, 0, 315, 100),
+            ControlPadding = new Vector2(5, 5),
+            DrawColor = Color.cyan
+        };
+
+        var newObjectField = new EditorObjectField()
+        {
+            Name = "State Machine",
+            Position = new Rect(0, 0, 300, 25),
+            AcceptableType = typeof(StateMachine)
+        };
+
+        ActiveMachineContainer.AddControl(newObjectField);
+
+        ParamContainer = new ScrollContainer()
         {
             Name = "Parameters",
-            Position = new Rect(0, 0, 315, 500),
+            Position = new Rect(0, 0, 315, 200),
             DrawColor = Color.blue,
             ControlPadding = new Vector2(5, 5)
         };
-        addParamContainer = new AutoResizeContainer()
+        AddParamContainer = new AutoResizeContainer()
         {
             Name = "Add Param Container",
             Position = new Rect(0, 0, 315, 100),
@@ -54,17 +73,137 @@ public class StateMachineEditor : EditorWindow
             DrawColor = Color.green
         };
 
-        StateRef = new StateMachine();
+        var AddParam = new EditorButton() { Name = "Add Param", Position = new Rect(0, 0, 125, 25), Text = "Add Parameter" };
+        AddParam.OnClicked = AddParameter;
+        var RemoveParam = new EditorButton() { Name = "Delte Param", Position = new Rect(0, 0, 125, 25), Text = "Delete Parameter", IsInteractable = true };
+        RemoveParam.OnClicked = DeleteParameter;
+
+        var typeEnum = new EditorEnumField() { Name = "Paramater Type", Position = new Rect(0, 0, 300, 25), Value = TypeToAdd };
+        var newParamName = new EditorStringField()
+        {
+            Name = "Paramater Name",
+            Position = new Rect(0, 0, 300, 25),
+            Value = ""
+        };
+
+        AddParamContainer.AddControl(RemoveParam);
+        AddParamContainer.AddControl(AddParam);
+        AddParamContainer.AddControl(typeEnum);
+        AddParamContainer.AddControl(newParamName);
+
+
+        ControlsContianer.AddControl(ActiveMachineContainer);
+        ControlsContianer.AddControl(ParamContainer);
+        ControlsContianer.AddControl(AddParamContainer);
     }
 
     private void OnGUI()
-    {
+    {        
+        ValidateControls();
         DrawControls();
+
+        if (StateRef != null)
+            EditorUtility.SetDirty(StateRef);
+        EditorUtility.SetDirty(this);
     }    
 
     public void DrawControls()
     {
-        if (ControlsContianer == null)
+        ControlsContianer.Position.size = new Vector2(ControlsContianer.Position.size.x, maxSize.y);
+
+        DrawParameters();
+
+        if (StateRef != null)
+            foreach(var p in StateRef.Parameters)
+            {
+                if (p.Value.GetType() == typeof(Visual_Test.IntParameter))
+                    ((Visual_Test.IntParameter)p.Value).SetValue(((EditorIntField)ParamContainer.GetControl(p.Key)).Value);
+                if (p.Value.GetType() == typeof(Visual_Test.StringParameter))
+                    ((Visual_Test.StringParameter)p.Value).SetValue(((EditorStringField)ParamContainer.GetControl(p.Key)).Value);
+                if (p.Value.GetType() == typeof(Visual_Test.BooleanParamater))
+                    ((Visual_Test.BooleanParamater)p.Value).SetValue(((EditorBooleanField)ParamContainer.GetControl(p.Key)).Value);
+                if (p.Value.GetType() == typeof(Visual_Test.FloatParameter))
+                    ((Visual_Test.FloatParameter)p.Value).SetValue(((EditorFloatField)ParamContainer.GetControl(p.Key)).Value);
+            }
+
+        if(((EditorObjectField)ActiveMachineContainer.GetControl("State Machine")).Value != null)
+            StateRef = ((EditorObjectField)ActiveMachineContainer.GetControl("State Machine")).Value as StateMachine;
+        if ((EditorButton)AddParamContainer.GetControl("Add Param") != null)
+            ((EditorButton)AddParamContainer.GetControl("Add Param")).IsInteractable = ParamName != "";
+        if((EditorStringField)AddParamContainer.GetControl("Paramater Name") != null)
+            ParamName = ((EditorStringField)AddParamContainer.GetControl("Paramater Name")).Value;
+        if((EditorEnumField)AddParamContainer.GetControl("Paramater Type") != null)
+            TypeToAdd = (ParamType)((EditorEnumField)AddParamContainer.GetControl("Paramater Type")).Value;
+        
+        ControlsContianer.Draw(Rect.zero);          
+    }
+
+    void DrawParameters()
+    {
+
+        if (StateRef != null)
+        {
+            foreach (var p in StateRef.Parameters)
+            {
+                if (p.Value.GetType() == typeof(Visual_Test.IntParameter))
+                {
+                    EditorIntField intField = new EditorIntField()
+                    {
+                        Name = p.Key,
+                        Position = new Rect(0, 0, 300, 25),                          
+                        Value = ((Visual_Test.IntParameter)p.Value).InternalValue,
+                        OnInteract = ControlLastInteracted
+                    };
+                    ParamContainer.AddControl(intField);
+                    p.Value.SetValue(((EditorIntField)ParamContainer.GetControl(p.Key)).Value);
+                }
+                if (p.Value.GetType() == typeof(Visual_Test.FloatParameter))
+                {
+                    var floatField = new EditorFloatField()
+                    {
+                        Name = p.Key,
+                        Position = new Rect(0, 0, 300, 25),
+                        Value = ((Visual_Test.FloatParameter)p.Value).InternalValue,
+                        OnInteract = ControlLastInteracted
+                    };                    
+                    ParamContainer.AddControl(floatField);
+                    p.Value.SetValue(((EditorFloatField)ParamContainer.GetControl(p.Key)).Value);
+                }
+                if (p.Value.GetType() == typeof(Visual_Test.StringParameter))
+                {
+                    var stringField = new EditorStringField()
+                    {
+                        Name = p.Key,
+                        Position = new Rect(0, 0, 300, 25),
+                        Value = ((Visual_Test.StringParameter)p.Value).InternalValue,
+                        OnInteract = ControlLastInteracted
+                    };                    
+                    ParamContainer.AddControl(stringField);
+                    p.Value.SetValue(((EditorStringField)ParamContainer.GetControl(p.Key)).Value);
+                }
+                if (p.Value.GetType() == typeof(Visual_Test.BooleanParamater))
+                {
+                    var boolField = new EditorBooleanField()
+                    {
+                        Name = p.Key,
+                        Position = new Rect(0, 0, 300, 25),
+                        Value = ((Visual_Test.BooleanParamater)p.Value).InternalValue,
+                        OnInteract = ControlLastInteracted
+                    };                    
+                    ParamContainer.AddControl(boolField);
+                    p.Value.SetValue(((EditorBooleanField)ParamContainer.GetControl(p.Key)).Value);
+                }
+
+            }
+        }
+    }
+
+    /// <summary>
+    /// If any of the core controls are null create all new controls
+    /// </summary>
+    void ValidateControls()
+    {
+        if(ControlsContianer == null || ParamContainer == null || AddParamContainer == null || ActiveMachineContainer == null)
         {
             ControlsContianer = new GUIContianiner()
             {
@@ -72,113 +211,60 @@ public class StateMachineEditor : EditorWindow
                 Position = new Rect(0, 0, 325, maxSize.y),
                 ControlPadding = new Vector2(5, 5)
             };
-        }
 
-        ControlsContianer.Position.size = new Vector2(ControlsContianer.Position.size.x, maxSize.y);
+            ActiveMachineContainer = new AutoResizeContainer()
+            {
+                Name = "Active Machine",
+                Position = new Rect(0, 0, 315, 100),
+                ControlPadding = new Vector2(5, 5),
+                DrawColor = Color.cyan
+            };
 
-        if(paramContainer == null)
-            paramContainer = new GUIContianiner()
+            var newObjectField = new EditorObjectField()
+            {
+                Name = "State Machine",
+                Position = new Rect(0, 0, 300, 25),
+                AcceptableType = typeof(StateMachine)
+            };
+
+            ActiveMachineContainer.AddControl(newObjectField);
+
+            ParamContainer = new ScrollContainer()
             {
                 Name = "Parameters",
-                Position = new Rect(0, 0, 315, 500),
+                Position = new Rect(0, 0, 315, 200),
                 DrawColor = Color.blue,
-                ControlPadding = new Vector2(5,5)
+                ControlPadding = new Vector2(5, 5)
             };
-        
-        if(addParamContainer == null)
-        {
-            addParamContainer = new AutoResizeContainer()
+            AddParamContainer = new AutoResizeContainer()
             {
                 Name = "Add Param Container",
                 Position = new Rect(0, 0, 315, 100),
                 ControlPadding = new Vector2(5, 5),
                 DrawColor = Color.green
             };
-        }
+            var AddParam = new EditorButton() { Name = "Add Param", Position = new Rect(0, 0, 125, 25), Text = "Add Parameter" };
+            AddParam.OnClicked = AddParameter;
+            var RemoveParam = new EditorButton() { Name = "Delte Param", Position = new Rect(0, 0, 125, 25), Text = "Delete Parameter", IsInteractable = true };
+            RemoveParam.OnClicked = DeleteParameter;
 
-        if(StateRef == null)
-        {
-            StateRef = new StateMachine();
-        }
-
-        if(StateRef != null)
-            foreach(var p in StateRef.Parameters)
+            var typeEnum = new EditorEnumField() { Name = "Paramater Type", Position = new Rect(0, 0, 300, 25), Value = TypeToAdd };
+            var newParamName = new EditorStringField()
             {
-                if(p.Value.GetType() == typeof(Visual_Test.IntParameter))
-                {
-                    var intField = new EditorIntField()
-                    {
-                        Name = p.Key,
-                        Position = new Rect(0, 0, 300, 25),
-                        Value = (int)p.Value.Value,
-                        OnInteract = ControlLastInteracted
-                    };
-                    paramContainer.AddControl(intField);
-                    p.Value.SetValue(((EditorIntField)paramContainer.GetControl(p.Key)).Value);
-                }
-                if(p.Value.GetType() == typeof(Visual_Test.FloatParameter))
-                {
-                    var floatField = new EditorFloatField()
-                    {
-                        Name = p.Key,
-                        Position = new Rect(0, 0, 300, 25),
-                        Value = (float)p.Value.Value,
-                        OnInteract = ControlLastInteracted
-                    };                    
-                    paramContainer.AddControl(floatField);
-                    p.Value.SetValue(((EditorFloatField)paramContainer.GetControl(p.Key)).Value);                    
-                }
-                if(p.Value.GetType() == typeof(Visual_Test.StringParameter))
-                {
-                    var stringField = new EditorStringField()
-                    {
-                        Name = p.Key,
-                        Position = new Rect(0, 0, 300, 25),
-                        Value = (string)p.Value.Value,
-                        OnInteract = ControlLastInteracted
-                    };
-                    paramContainer.AddControl(stringField);
-                    p.Value.SetValue(((EditorStringField)paramContainer.GetControl(p.Key)).Value);
-                }
-                if(p.Value.GetType() == typeof(Visual_Test.BooleanParamater))
-                {
-                    var boolField = new EditorBooleanField()
-                    {
-                        Name = p.Key,
-                        Position = new Rect(0, 0, 300, 25),
-                        Value = (bool)p.Value.Value,
-                        OnInteract = ControlLastInteracted
-                    };
-                    paramContainer.AddControl(boolField);
-                    p.Value.SetValue(((EditorBooleanField)paramContainer.GetControl(p.Key)).Value);                    
-                }
-            }
+                Name = "Paramater Name",
+                Position = new Rect(0, 0, 300, 25),
+                Value = ""
+            };
 
-        var AddParam = new EditorButton() { Name = "Add Param", Position = new Rect(0, 0, 125, 25), Text = "Add Parameter" };        
-        AddParam.OnClicked = AddParameter;
-        var RemoveParam = new EditorButton() { Name = "Delte Param", Position = new Rect(0, 0, 125, 25), Text = "Delete Parameter", IsInteractable = true };
-        RemoveParam.OnClicked = DeleteParameter;
+            AddParamContainer.AddControl(RemoveParam);
+            AddParamContainer.AddControl(AddParam);
+            AddParamContainer.AddControl(typeEnum);
+            AddParamContainer.AddControl(newParamName);
 
-        var testEnum = new EditorEnumField() { Name = "Tester", Position = new Rect(0, 0, 300, 25), Value = TypeToAdd };
-        var testString = new EditorStringField()
-        {
-            Name = "Param Name",
-            Position = new Rect(0, 0, 300, 25),
-            Value = ""            
-        };        
-
-        ControlsContianer.AddControl(paramContainer);
-        ControlsContianer.AddControl(addParamContainer);
-        addParamContainer.AddControl(RemoveParam);
-        addParamContainer.AddControl(AddParam);        
-        addParamContainer.AddControl(testEnum);
-        addParamContainer.AddControl(testString);        
-                
-
-        ((EditorButton)addParamContainer.GetControl("Add Param")).IsInteractable = ParamName != "";
-        ParamName = ((EditorStringField)addParamContainer.GetControl("Param Name")).Value;
-        TypeToAdd = (ParamType)((EditorEnumField)addParamContainer.GetControl("Tester")).Value;
-        ControlsContianer.Draw(Rect.zero);       
+            ControlsContianer.AddControl(ActiveMachineContainer);
+            ControlsContianer.AddControl(ParamContainer);
+            ControlsContianer.AddControl(AddParamContainer);            
+        }
     }
 
     public void ControlLastInteracted(Control control)
@@ -186,16 +272,18 @@ public class StateMachineEditor : EditorWindow
         LastParamInteracted = control;
     }
 
-    public void DeleteParameter()
+    public static void DeleteParameter()
     {
         if (LastParamInteracted == null)
             return;
-        paramContainer.RemoveControl(LastParamInteracted.Name);
+        ParamContainer.RemoveControl(LastParamInteracted.Name);
         StateRef.RemoveParamter(LastParamInteracted.Name);
     }
 
-    public void AddParameter()
+    public static void AddParameter()
     {
+        if (StateRef == null)
+            return;
         switch(TypeToAdd)
         {
             case ParamType._bool:
