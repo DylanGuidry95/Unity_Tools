@@ -6,19 +6,19 @@ using System.Threading.Tasks;
 
 namespace StateMachineUtil
 {
-    public class StateMachine
+    public class StateMachine<T>
     {
         #region Fields
-        private List<State> _states;
-        private List<Tranisition> _transitions;
+        private List<State<T>> _states;
+        private List<Tranisition<T>> _transitions;
         private List<StateMachineUtil.Parameters.Parameter> _parameters;
-        private State _currentState;
+        private State<T> _currentState;
 
         public bool AllowAutoTransition;
         #endregion
 
         #region Properties
-        public string CurrentState
+        public T CurrentState
         {
             get
             {
@@ -26,17 +26,17 @@ namespace StateMachineUtil
             }
         }
 
-        public Dictionary<State, List<Tranisition>> TransitionFromState
+        public Dictionary<State<T>, List<Tranisition<T>>> TransitionFromState
         {
             get
             {
-                var returnDictionary = new Dictionary<State, List<Tranisition>>();
+                var returnDictionary = new Dictionary<State<T>, List<Tranisition<T>>>();
                 foreach (var state in _states)
                 {
-                    var transitions = new List<Tranisition>();
+                    var transitions = new List<Tranisition<T>>();
                     foreach (var transition in _transitions)
                     {
-                        if (transition.StartState == state.Name)
+                        if (transition.StartState.ToString() == state.Name.ToString())
                         {
                             transitions.Add(transition);
                         }
@@ -51,13 +51,13 @@ namespace StateMachineUtil
         #region Constructors
         public StateMachine(bool autoTransition = false)
         {
-            _states = new List<State>();
-            _transitions = new List<Tranisition>();
+            _states = new List<State<T>>();
+            _transitions = new List<Tranisition<T>>();
             _parameters = new List<Parameters.Parameter>();
             AllowAutoTransition = autoTransition;
         }
 
-        public StateMachine(List<State> states, List<Tranisition> tranisitions, List<StateMachineUtil.Parameters.Parameter> parameters = null, bool autoTransition = false)
+        public StateMachine(List<State<T>> states, List<Tranisition<T>> tranisitions, List<StateMachineUtil.Parameters.Parameter> parameters = null, bool autoTransition = false)
         {
             _states = states;
             _transitions = tranisitions;
@@ -67,7 +67,7 @@ namespace StateMachineUtil
         #endregion
 
         #region Methods
-        public void StartMachine(string startState)
+        public void StartMachine(T startState)
         {
             _currentState = GetStateByName(startState);
             _currentState.Enter();
@@ -92,9 +92,9 @@ namespace StateMachineUtil
             GetParameterByName(name).Value = value;
         }
 
-        public State AddState(string stateName)
+        public State<T> AddState(T stateName)
         {
-            var newState = new State(stateName);
+            var newState = new State<T>(stateName);
             _states.Add(newState);
             return newState;
         }
@@ -105,25 +105,25 @@ namespace StateMachineUtil
             return parameter;
         }
 
-        public Tranisition AddTransition(string startState, string endState, List<Condition> conditions = null)
+        public Tranisition<T> AddTransition(T startState, T endState, List<Condition> conditions = null)
         {
-            var newTransition = new Tranisition(GetStateByName(startState), GetStateByName(endState));
+            var newTransition = new Tranisition<T>(GetStateByName(startState), GetStateByName(endState));
             _transitions.Add(newTransition);
             return newTransition;
         }
 
-        private void GoToState(string stateName)
+        private void GoToState(T stateName)
         {
             _currentState.Exit();
             _currentState = GetStateByName(stateName);
             _currentState.Enter();
         }
 
-        private State GetStateByName(string name)
+        private State<T> GetStateByName(T name)
         {
             foreach(var state in _states)
             {
-                if (state.Name == name)
+                if (state.Name.ToString() == name.ToString())
                     return state;
             }
             return null;
@@ -139,12 +139,12 @@ namespace StateMachineUtil
             return null;
         }
 
-        private List<Tranisition> GetAllTransitionsFromState(string stateName)
+        private List<Tranisition<T>> GetAllTransitionsFromState(T stateName)
         {
-            var retList = new List<Tranisition>();
+            var retList = new List<Tranisition<T>>();
             foreach (var transition in _transitions)
             {
-                if (transition.StartState == stateName)
+                if (transition.StartState.ToString() == stateName.ToString())
                 {
                     retList.Add(transition);
                 }
@@ -152,7 +152,7 @@ namespace StateMachineUtil
             return retList;
         }
 
-        private List<Tranisition> GetAllTransitionsFromState(State state)
+        private List<Tranisition<T>> GetAllTransitionsFromState(State<T> state)
         {
             return GetAllTransitionsFromState(state.Name);
         }

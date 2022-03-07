@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace StateMachineUtil
 {
-    public class Tranisition
+    public class Tranisition<T>
     {
         #region Fields
-        private State _startState;
-        private State _endState;
+        private State<T> _startState;
+        private State<T> _endState;
         private List<Condition> _conditions;
         #endregion
 
         #region Properties
-        public string StartState
+        public T StartState
         {
             get
             {
@@ -23,7 +23,7 @@ namespace StateMachineUtil
             }
         }
 
-        public string EndState
+        public T EndState
         {
             get
             {
@@ -33,7 +33,7 @@ namespace StateMachineUtil
         #endregion
 
         #region Constructors
-        public Tranisition(State start, State end, List<Condition> conditions = null)
+        public Tranisition(State<T> start, State<T> end, List<Condition> conditions = null)
         {
             _startState = start;
             _endState = end;

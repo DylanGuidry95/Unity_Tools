@@ -2,14 +2,14 @@
 
 namespace StateMachineUtil
 {
-    public class State
+    public class State<T>
     {
         #region DelegateDeclerations
         public delegate void StateEventDelegate();
         #endregion
 
         #region Fields
-        private string _name;
+        private T _name;
 
         private StateEventDelegate _onEntered;
         private StateEventDelegate _onExited;
@@ -17,7 +17,7 @@ namespace StateMachineUtil
         #endregion
 
         #region Properties
-        public string Name
+        public T Name
         {
             get
             {
@@ -59,7 +59,7 @@ namespace StateMachineUtil
         #endregion
 
         #region Constructors
-        public State(string name)
+        public State(T name)
         {
             _name = name;
         }
@@ -96,18 +96,9 @@ namespace StateMachineUtil
         #endregion
 
         #region Overloads
-        public override bool Equals(object obj)
-        {
-            if(obj.GetType() == typeof(State))
-            {
-                return (obj as State)._name == this._name;
-            }
-            return false;
-        }
-
         public override string ToString()
         {
-            var data = _name + '\n';
+            var data = _name.ToString() + '\n';
             if(_onEntered != null)
             {
                 data += "OnStateEntered Methods:\n";
